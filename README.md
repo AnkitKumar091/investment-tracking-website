@@ -1,9 +1,15 @@
+🚀 Features
+🔹 User-Friendly Dashboard – View portfolio, track investments, and monitor performance.
 
+🔹 Company Investments – Invest money directly into companies and manage capital allocation.
 
-## Overview
+🔹 Real-Time Stock Trading – Buy and sell stocks with live price updates.
 
-This repository will stay in sync with your deployed chats on [v0.dev](https://v0.dev).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.dev](https://v0.dev).
+🔹 Live Market Data – Get real-time stock market feeds for informed trading decisions.
+
+🔹 Secure Transactions – Authentication and encryption to ensure your investments are safe.
+
+🔹 Responsive UI – Fully responsive and optimized for all screen sizes.
 
 ## Deployment
 
@@ -11,15 +17,16 @@ Your project is live at:
 
 **https://v0-investment-tracking-website-beta.vercel.app/**
 
-## Build your app
+🛠️ Tech Stack
+Frontend:
+React.js (with Bootstrap / Tailwind for styling)
 
-Continue building your app on:
+Typescript , Css
 
-**[https://v0.dev/chat/projects/ycYkZdiliih](https://v0.dev/chat/projects/ycYkZdiliih)**
+React Router
 
-## How It Works
+Backend:
+Node.js with Express
 
-1. Create and modify your project using [v0.dev](https://v0.dev)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+Database:
+Supabase
