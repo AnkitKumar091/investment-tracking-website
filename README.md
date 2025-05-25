@@ -9,7 +9,7 @@ Any changes you make to your deployed app will be automatically pushed to this r
 
 Your project is live at:
 
-**[https://vercel.com/kumarankit0161-gmailcoms-projects/v0-investment-tracking-website](https://vercel.com/kumarankit0161-gmailcoms-projects/v0-investment-tracking-website)**
+**https://v0-investment-tracking-website-beta.vercel.app/**
 
 ## Build your app
 
