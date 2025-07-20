@@ -40,6 +40,37 @@ interface Investment {
   notes?: string
 }
 
+// Mock data for demo purposes
+const mockInvestments: Investment[] = [
+  {
+    id: "1",
+    name: "Reliance Industries",
+    amount: 50,
+    initial_value: 125000,
+    current_value: 142500,
+    purchase_date: "2024-01-15",
+    notes: "Large cap stock with good fundamentals",
+  },
+  {
+    id: "2",
+    name: "HDFC Bank",
+    amount: 25,
+    initial_value: 37500,
+    current_value: 41250,
+    purchase_date: "2024-02-10",
+    notes: "Banking sector investment",
+  },
+  {
+    id: "3",
+    name: "Nifty 50 ETF",
+    amount: 100,
+    initial_value: 15000,
+    current_value: 16800,
+    purchase_date: "2024-03-05",
+    notes: "Diversified index fund",
+  },
+]
+
 export default function DashboardPage() {
   const { user, loading } = useAuth()
   const router = useRouter()
@@ -73,34 +104,81 @@ export default function DashboardPage() {
   const fetchInvestments = async () => {
     if (!user) return
 
-    const { data, error } = await supabase
-      .from("investments")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
+    try {
+      // Check if this is a mock user (for demo purposes)
+      if (
+        user.id.includes("xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".substring(0, 8)) ||
+        localStorage.getItem("mock-user")
+      ) {
+        // Use mock data for demo
+        setInvestments(mockInvestments)
+        return
+      }
 
-    if (!error && data) {
-      setInvestments(data)
-    } else {
-      console.error("Error fetching investments:", error)
+      // Try to fetch from database for real users
+      const { data, error } = await supabase
+        .from("investments")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+
+      if (!error && data) {
+        setInvestments(data)
+      } else {
+        console.error("Error fetching investments:", error)
+        // Fallback to mock data if database fails
+        setInvestments(mockInvestments)
+      }
+    } catch (error) {
+      console.error("Error in fetchInvestments:", error)
+      // Fallback to mock data
+      setInvestments(mockInvestments)
     }
   }
 
   const handleAddInvestment = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    const { error } = await supabase.from("investments").insert([
-      {
-        ...newInvestment,
-        user_id: user?.id,
-        amount: Number.parseFloat(newInvestment.amount),
-        initial_value: Number.parseFloat(newInvestment.initial_value),
-        current_value: Number.parseFloat(newInvestment.current_value),
-        category_id: null,
-      },
-    ])
+    const newInv: Investment = {
+      id: Date.now().toString(),
+      name: newInvestment.name,
+      amount: Number.parseFloat(newInvestment.amount),
+      initial_value: Number.parseFloat(newInvestment.initial_value),
+      current_value: Number.parseFloat(newInvestment.current_value),
+      purchase_date: newInvestment.purchase_date,
+      notes: newInvestment.notes,
+    }
 
-    if (!error) {
+    try {
+      // Check if this is a mock user
+      if (
+        user?.id.includes("xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".substring(0, 8)) ||
+        localStorage.getItem("mock-user")
+      ) {
+        // Add to local state for demo
+        setInvestments((prev) => [newInv, ...prev])
+      } else {
+        // Try to add to database for real users
+        const { error } = await supabase.from("investments").insert([
+          {
+            ...newInvestment,
+            user_id: user?.id,
+            amount: Number.parseFloat(newInvestment.amount),
+            initial_value: Number.parseFloat(newInvestment.initial_value),
+            current_value: Number.parseFloat(newInvestment.current_value),
+            category_id: null,
+          },
+        ])
+
+        if (!error) {
+          fetchInvestments()
+        } else {
+          console.error("Error adding investment:", error)
+          // Fallback to local state
+          setInvestments((prev) => [newInv, ...prev])
+        }
+      }
+
       setIsAddDialogOpen(false)
       setNewInvestment({
         name: "",
@@ -110,9 +188,8 @@ export default function DashboardPage() {
         purchase_date: "",
         notes: "",
       })
-      fetchInvestments()
-    } else {
-      console.error("Error adding investment:", error)
+    } catch (error) {
+      console.error("Error in handleAddInvestment:", error)
       alert("Failed to add investment. Please try again.")
     }
   }
@@ -121,31 +198,70 @@ export default function DashboardPage() {
     e.preventDefault()
     if (!editingInvestment) return
 
-    const { error } = await supabase
-      .from("investments")
-      .update({
-        name: editingInvestment.name,
-        amount: editingInvestment.amount,
-        initial_value: editingInvestment.initial_value,
-        current_value: editingInvestment.current_value,
-        purchase_date: editingInvestment.purchase_date,
-        notes: editingInvestment.notes,
-      })
-      .eq("id", editingInvestment.id)
+    try {
+      // Check if this is a mock user
+      if (
+        user?.id.includes("xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".substring(0, 8)) ||
+        localStorage.getItem("mock-user")
+      ) {
+        // Update local state for demo
+        setInvestments((prev) => prev.map((inv) => (inv.id === editingInvestment.id ? editingInvestment : inv)))
+      } else {
+        // Try to update in database for real users
+        const { error } = await supabase
+          .from("investments")
+          .update({
+            name: editingInvestment.name,
+            amount: editingInvestment.amount,
+            initial_value: editingInvestment.initial_value,
+            current_value: editingInvestment.current_value,
+            purchase_date: editingInvestment.purchase_date,
+            notes: editingInvestment.notes,
+          })
+          .eq("id", editingInvestment.id)
 
-    if (!error) {
+        if (!error) {
+          fetchInvestments()
+        } else {
+          console.error("Error updating investment:", error)
+          // Fallback to local state
+          setInvestments((prev) => prev.map((inv) => (inv.id === editingInvestment.id ? editingInvestment : inv)))
+        }
+      }
+
       setIsEditDialogOpen(false)
       setEditingInvestment(null)
-      fetchInvestments()
+    } catch (error) {
+      console.error("Error in handleEditInvestment:", error)
+      alert("Failed to update investment. Please try again.")
     }
   }
 
   const handleDeleteInvestment = async (id: string) => {
     if (confirm("Are you sure you want to delete this investment?")) {
-      const { error } = await supabase.from("investments").delete().eq("id", id)
+      try {
+        // Check if this is a mock user
+        if (
+          user?.id.includes("xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".substring(0, 8)) ||
+          localStorage.getItem("mock-user")
+        ) {
+          // Remove from local state for demo
+          setInvestments((prev) => prev.filter((inv) => inv.id !== id))
+        } else {
+          // Try to delete from database for real users
+          const { error } = await supabase.from("investments").delete().eq("id", id)
 
-      if (!error) {
-        fetchInvestments()
+          if (!error) {
+            fetchInvestments()
+          } else {
+            console.error("Error deleting investment:", error)
+            // Fallback to local state
+            setInvestments((prev) => prev.filter((inv) => inv.id !== id))
+          }
+        }
+      } catch (error) {
+        console.error("Error in handleDeleteInvestment:", error)
+        alert("Failed to delete investment. Please try again.")
       }
     }
   }

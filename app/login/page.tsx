@@ -1,178 +1,241 @@
 "use client"
 
 import type React from "react"
+
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
 import { useAuth } from "@/contexts/auth-context"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { TrendingUp, Eye, EyeOff, ArrowRight } from "lucide-react"
+import { Eye, EyeOff, LogIn, Sparkles, TrendingUp, Shield, Zap } from "lucide-react"
+import Link from "next/link"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState("")
-  const [loading, setLoading] = useState(false)
   const [isVisible, setIsVisible] = useState(false)
-  const { signIn } = useAuth()
+  const { signIn, loading, user } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
     setIsVisible(true)
-  }, [])
+    // Redirect if already logged in
+    if (user && !loading) {
+      router.push("/dashboard")
+    }
+  }, [user, loading, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
     setError("")
 
-    const { error } = await signIn(email, password)
-
-    if (error) {
-      if (error.includes("Invalid login credentials")) {
-        setError("Invalid email or password. Please check your credentials and try again.")
-      } else {
-        setError(error)
-      }
+    const result = await signIn(email, password)
+    if (result.error) {
+      setError(result.error)
     } else {
       router.push("/dashboard")
     }
+  }
 
-    setLoading(false)
+  if (user && !loading) {
+    return null // Will redirect
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-      {/* Animated Background Elements */}
-      <div className="absolute inset-0 overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Enhanced Animated Background Elements */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-20 left-10 w-72 h-72 bg-green-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-float"></div>
         <div
-          className="absolute top-40 right-10 w-72 h-72 bg-emerald-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-float"
+          className="absolute top-40 right-10 w-72 h-72 bg-emerald-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-float-slow"
           style={{ animationDelay: "2s" }}
         ></div>
         <div
           className="absolute bottom-20 left-20 w-72 h-72 bg-teal-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-float"
           style={{ animationDelay: "4s" }}
         ></div>
+        <div
+          className="absolute top-1/2 left-1/2 w-96 h-96 bg-gradient-to-r from-green-200 to-emerald-200 rounded-full mix-blend-multiply filter blur-2xl opacity-10 animate-float-slow"
+          style={{ animationDelay: "1s" }}
+        ></div>
       </div>
 
-      <Card
-        className={`w-full max-w-md relative z-10 bg-white/80 backdrop-blur-md border-white/50 shadow-2xl transition-all duration-1000 ${isVisible ? "animate-scale-in" : "opacity-0 scale-95"}`}
-      >
-        <CardHeader className="text-center space-y-4">
-          <div className="flex justify-center">
-            <div className="relative">
-              <TrendingUp className="h-12 w-12 text-green-600 animate-float" />
-              <div className="absolute inset-0 bg-green-600 rounded-full opacity-20 scale-0 animate-pulse"></div>
-            </div>
-          </div>
-          <div>
-            <CardTitle className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-green-600 bg-clip-text text-transparent">
+      {/* Floating particles */}
+      <div className="particles">
+        {[...Array(15)].map((_, i) => (
+          <div
+            key={i}
+            className="particle"
+            style={{
+              left: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 8}s`,
+              animationDuration: `${8 + Math.random() * 4}s`,
+            }}
+          />
+        ))}
+      </div>
+
+      <div className="relative z-10 w-full max-w-6xl mx-auto grid lg:grid-cols-2 gap-8 items-center">
+        {/* Left Side - Branding */}
+        <div
+          className={`text-center lg:text-left transition-all duration-1000 ${isVisible ? "animate-slide-in-left" : "opacity-0"}`}
+        >
+          <div className="mb-8">
+            <h1 className="text-4xl lg:text-6xl font-bold bg-gradient-to-r from-gray-900 via-green-600 to-emerald-600 bg-clip-text text-transparent animate-gradient relative">
               Welcome Back
-            </CardTitle>
-            <CardDescription className="text-gray-600 mt-2">Sign in to your InvestTracker account</CardDescription>
+              <Sparkles className="absolute -top-2 -right-8 h-8 w-8 text-yellow-400 animate-bounce" />
+            </h1>
+            <p className="text-xl lg:text-2xl text-gray-600 mt-4 animate-fade-in-up" style={{ animationDelay: "0.3s" }}>
+              Continue your investment journey
+            </p>
           </div>
-        </CardHeader>
 
-        <CardContent className="space-y-6">
-          {error && (
-            <Alert variant="destructive" className="animate-fade-in-up">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium text-gray-700">
-                Email
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                placeholder="Enter your email"
-                disabled={loading}
-                className="transition-all duration-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-              />
+          {/* Feature highlights */}
+          <div className="space-y-4 mb-8">
+            <div
+              className="flex items-center justify-center lg:justify-start space-x-3 animate-fade-in-up"
+              style={{ animationDelay: "0.5s" }}
+            >
+              <div className="p-2 bg-green-100 rounded-lg animate-pulse-glow">
+                <TrendingUp className="h-5 w-5 text-green-600" />
+              </div>
+              <span className="text-gray-700 font-medium">Track your portfolio performance</span>
             </div>
+            <div
+              className="flex items-center justify-center lg:justify-start space-x-3 animate-fade-in-up"
+              style={{ animationDelay: "0.7s" }}
+            >
+              <div className="p-2 bg-blue-100 rounded-lg animate-pulse-glow">
+                <Shield className="h-5 w-5 text-blue-600" />
+              </div>
+              <span className="text-gray-700 font-medium">Secure and reliable platform</span>
+            </div>
+            <div
+              className="flex items-center justify-center lg:justify-start space-x-3 animate-fade-in-up"
+              style={{ animationDelay: "0.9s" }}
+            >
+              <div className="p-2 bg-purple-100 rounded-lg animate-pulse-glow">
+                <Zap className="h-5 w-5 text-purple-600" />
+              </div>
+              <span className="text-gray-700 font-medium">Real-time market data</span>
+            </div>
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-medium text-gray-700">
-                Password
-              </Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  placeholder="Enter your password"
-                  disabled={loading}
-                  className="transition-all duration-300 focus:ring-2 focus:ring-green-500 focus:border-green-500 pr-10"
-                />
+          {/* Demo notice */}
+          <div
+            className="bg-gradient-to-r from-green-100 to-emerald-100 border border-green-200 rounded-lg p-4 animate-fade-in-up"
+            style={{ animationDelay: "1.1s" }}
+          >
+            <div className="flex items-center space-x-2 mb-2">
+              <Sparkles className="h-5 w-5 text-green-600 animate-bounce" />
+              <span className="font-semibold text-green-800">Demo Mode Active</span>
+            </div>
+            <p className="text-green-700 text-sm">
+              Use any email and password (min 6 characters) to explore the platform instantly!
+            </p>
+            <p className="text-green-600 text-xs mt-1 font-medium">Try: demo@example.com / password123</p>
+          </div>
+        </div>
+
+        {/* Right Side - Login Form */}
+        <div className={`transition-all duration-1000 delay-300 ${isVisible ? "animate-slide-in-right" : "opacity-0"}`}>
+          <Card className="card-hover bg-white/90 backdrop-blur-sm border-white/50 shadow-2xl relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-green-50/50 to-emerald-50/50 opacity-0 hover:opacity-100 transition-opacity duration-500"></div>
+            <CardHeader className="relative z-10 text-center">
+              <CardTitle className="text-2xl font-bold text-gray-900 flex items-center justify-center">
+                <LogIn className="mr-2 h-6 w-6 text-green-600 animate-wiggle" />
+                Sign In
+              </CardTitle>
+              <CardDescription className="text-gray-600">Enter your credentials to access your account</CardDescription>
+            </CardHeader>
+            <CardContent className="relative z-10">
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+                    Email Address
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    placeholder="Enter your email"
+                    autoComplete="email"
+                    className="transition-all duration-300 focus:ring-2 focus:ring-green-500 hover-glow"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="text-sm font-medium text-gray-700">
+                    Password
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      placeholder="Enter your password"
+                      autoComplete="current-password"
+                      className="pr-10 transition-all duration-300 focus:ring-2 focus:ring-green-500 hover-glow"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-200 hover-bounce"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                {error && (
+                  <Alert className="border-red-200 bg-red-50 animate-shake">
+                    <AlertDescription className="text-red-700 text-sm">{error}</AlertDescription>
+                  </Alert>
+                )}
+
                 <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                  onClick={() => setShowPassword(!showPassword)}
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-green-600 hover:bg-green-700 transform hover:scale-105 transition-all duration-300 btn-animate relative overflow-hidden"
                 >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4 text-gray-400" />
+                  {loading ? (
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Signing In...
+                    </div>
                   ) : (
-                    <Eye className="h-4 w-4 text-gray-400" />
+                    <div className="flex items-center justify-center">
+                      <LogIn className="mr-2 h-4 w-4" />
+                      Sign In
+                    </div>
                   )}
                 </Button>
-              </div>
-            </div>
 
-            <Button
-              type="submit"
-              className="w-full bg-green-600 hover:bg-green-700 transform hover:scale-105 transition-all duration-300 group"
-              disabled={loading}
-            >
-              {loading ? (
-                <div className="flex items-center">
-                  <div className="spinner mr-2"></div>
-                  Signing In...
+                <div className="text-center pt-4 border-t border-gray-200">
+                  <p className="text-sm text-gray-600">
+                    Don't have an account?{" "}
+                    <Link
+                      href="/signup"
+                      className="font-medium text-green-600 hover:text-green-500 transition-colors duration-200 hover:underline"
+                    >
+                      Sign up here
+                    </Link>
+                  </p>
                 </div>
-              ) : (
-                <div className="flex items-center justify-center">
-                  Sign In
-                  <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform duration-300" />
-                </div>
-              )}
-            </Button>
-          </form>
-
-          <div className="text-center">
-            <p className="text-sm text-gray-600">
-              {"Don't have an account? "}
-              <Link
-                href="/signup"
-                className="text-green-600 hover:text-green-700 font-medium transition-colors duration-300 hover:underline"
-              >
-                Sign up
-              </Link>
-            </p>
-          </div>
-
-          {/* Demo credentials for testing */}
-          <div className="mt-4 p-3 bg-gray-50 rounded-lg border">
-            <p className="text-xs text-gray-600 text-center">
-              <strong>Demo:</strong> Create any account and you'll be logged in immediately!
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   )
 }

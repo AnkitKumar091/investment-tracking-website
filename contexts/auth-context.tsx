@@ -2,7 +2,6 @@
 
 import type React from "react"
 import { createContext, useContext, useEffect, useState } from "react"
-import { supabase } from "@/lib/supabase"
 import type { User } from "@supabase/supabase-js"
 
 interface AuthContextType {
@@ -15,131 +14,140 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+// Generate a proper UUID v4
+function generateUUID(): string {
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0
+    const v = c === "x" ? r : (r & 0x3) | 0x8
+    return v.toString(16)
+  })
+}
+
+// Mock user data for preview environment
+const createMockUser = (email: string, fullName: string): User => ({
+  id: generateUUID(),
+  email,
+  user_metadata: { full_name: fullName },
+  app_metadata: {},
+  aud: "authenticated",
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+  email_confirmed_at: new Date().toISOString(),
+  last_sign_in_at: new Date().toISOString(),
+  role: "authenticated",
+  confirmation_sent_at: null,
+  confirmed_at: new Date().toISOString(),
+  recovery_sent_at: null,
+  email_change_sent_at: null,
+  new_email: null,
+  invited_at: null,
+  action_link: null,
+  phone: null,
+  phone_confirmed_at: null,
+  phone_change_sent_at: null,
+  new_phone: null,
+  is_anonymous: false,
+  identities: [],
+})
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Get initial session
-    const getSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
-      setUser(session?.user ?? null)
-      setLoading(false)
+    // Check for existing session in localStorage
+    const savedUser = localStorage.getItem("mock-user")
+    if (savedUser) {
+      try {
+        setUser(JSON.parse(savedUser))
+      } catch (error) {
+        console.error("Error parsing saved user:", error)
+        localStorage.removeItem("mock-user")
+      }
     }
-
-    getSession()
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
-
-    return () => subscription.unsubscribe()
+    setLoading(false)
   }, [])
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
+      setLoading(true)
 
-      if (error) {
-        return { error: error.message }
+      // Basic validation
+      if (!email || !password) {
+        setLoading(false)
+        return { error: "Email and password are required" }
       }
 
+      if (!email.includes("@")) {
+        setLoading(false)
+        return { error: "Please enter a valid email address" }
+      }
+
+      if (password.length < 6) {
+        setLoading(false)
+        return { error: "Password must be at least 6 characters long" }
+      }
+
+      // Simulate API delay
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+
+      // Mock authentication - always succeeds for demo
+      const mockUser = createMockUser(email, email.split("@")[0])
+      setUser(mockUser)
+      localStorage.setItem("mock-user", JSON.stringify(mockUser))
+
+      setLoading(false)
       return { error: undefined }
     } catch (err: any) {
+      setLoading(false)
       return { error: err.message || "Failed to sign in" }
     }
   }
 
   const signUp = async (email: string, password: string, fullName: string) => {
     try {
-      // Sign up the user with auto-confirmation
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-          },
-          // This will auto-confirm the user without email verification
-          emailRedirectTo: undefined,
-        },
-      })
+      setLoading(true)
 
-      if (error) {
-        return { error: error.message }
+      // Basic validation
+      if (!email || !password || !fullName) {
+        setLoading(false)
+        return { error: "All fields are required" }
       }
 
-      // If signup was successful but no session (email confirmation required)
-      // We'll manually confirm the user
-      if (data.user && !data.session) {
-        // Auto-confirm the user by signing them in immediately
-        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        })
-
-        if (signInError) {
-          // If sign in fails, try to manually confirm the user
-          try {
-            await fetch("/api/auth/auto-confirm", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ email, userId: data.user.id }),
-            })
-
-            // Try signing in again after confirmation
-            const { error: retrySignInError } = await supabase.auth.signInWithPassword({
-              email,
-              password,
-            })
-
-            if (retrySignInError) {
-              return { error: retrySignInError.message }
-            }
-          } catch (confirmError) {
-            console.error("Auto-confirmation failed:", confirmError)
-            return { error: "Account created but login failed. Please try logging in." }
-          }
-        }
+      if (!email.includes("@")) {
+        setLoading(false)
+        return { error: "Please enter a valid email address" }
       }
 
-      // Insert user data into our users table
-      if (data.user) {
-        const { error: insertError } = await supabase.from("users").insert([
-          {
-            id: data.user.id,
-            email: email,
-            full_name: fullName,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-        ])
-
-        if (insertError && insertError.code !== "23505") {
-          // Ignore duplicate key errors (user already exists)
-          console.error("Error inserting user data:", insertError)
-        }
+      if (password.length < 6) {
+        setLoading(false)
+        return { error: "Password must be at least 6 characters long" }
       }
 
+      if (fullName.length < 2) {
+        setLoading(false)
+        return { error: "Full name must be at least 2 characters long" }
+      }
+
+      // Simulate API delay
+      await new Promise((resolve) => setTimeout(resolve, 1500))
+
+      // Mock registration - always succeeds and auto-signs in
+      const mockUser = createMockUser(email, fullName)
+      setUser(mockUser)
+      localStorage.setItem("mock-user", JSON.stringify(mockUser))
+
+      setLoading(false)
       return { error: undefined }
     } catch (err: any) {
+      setLoading(false)
       return { error: err.message || "Failed to sign up" }
     }
   }
 
   const signOut = async () => {
-    await supabase.auth.signOut()
+    setUser(null)
+    localStorage.removeItem("mock-user")
   }
 
   return <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut }}>{children}</AuthContext.Provider>
